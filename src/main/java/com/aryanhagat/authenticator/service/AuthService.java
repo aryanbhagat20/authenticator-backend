@@ -16,11 +16,14 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TwoFactorService twoFactorService;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       TwoFactorService twoFactorService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.twoFactorService = twoFactorService;
     }
 
     public void signup(SignupRequest request) {
@@ -40,6 +43,8 @@ public class AuthService {
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setTwoFactorSecret(twoFactorService.generateSecret());
+        user.setTwoFactorEnabled(false);
 
         userRepository.save(user);
     }

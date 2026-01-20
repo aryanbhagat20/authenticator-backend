@@ -28,6 +28,9 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
+    @Column(name = "two_factor_secret")
+    private String twoFactorSecret;
+
     // getters and setters (generate via IntelliJ)
     public Long getId() {
         return id;
@@ -67,5 +70,13 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getTwoFactorSecret() {
+        return twoFactorSecret;
+    }
+
+    public void setTwoFactorSecret(String twoFactorSecret) {
+        this.twoFactorSecret = twoFactorSecret;
     }
 }
