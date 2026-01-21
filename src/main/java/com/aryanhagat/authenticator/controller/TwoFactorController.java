@@ -7,6 +7,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.aryanhagat.authenticator.dto.OtpVerifyRequest;
+
+
 
 @RestController
 @RequestMapping("/2fa")
@@ -38,4 +41,29 @@ public class TwoFactorController {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE)
                 .body(qrImage);
     }
+
+    @PostMapping("/verify")
+    public ResponseEntity<String> verifyOtp(@RequestBody OtpVerifyRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean isValid = twoFactorService.verifyOtp(
+                user.getTwoFactorSecret(),
+                request.getOtp()
+        );
+
+        if (!isValid) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Invalid OTP");
+        }
+
+        user.setTwoFactorEnabled(true);
+        userRepository.save(user);
+
+        return ResponseEntity.ok("2FA enabled successfully");
+    }
+
+
 }
