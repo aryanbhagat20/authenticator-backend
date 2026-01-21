@@ -1,9 +1,11 @@
 package com.aryanhagat.authenticator.controller;
 
+import com.aryanhagat.authenticator.dto.LoginOtpRequest;
 import com.aryanhagat.authenticator.dto.SignupRequest;
 import com.aryanhagat.authenticator.dto.LoginRequest;
 
 import com.aryanhagat.authenticator.service.AuthService;
+import com.aryanhagat.authenticator.dto.LoginResponse;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,16 +27,25 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody LoginRequest request) {
 
-        boolean loginCompleted = authService.login(request);
-
-        if (loginCompleted) {
-            return ResponseEntity.ok("Login successful");
-        } else {
-            return ResponseEntity.ok("OTP verification required");
-        }
+        return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/login/2fa")
+    public ResponseEntity<LoginResponse> verifyLoginOtp(
+            @RequestBody LoginOtpRequest request) {
+
+        return ResponseEntity.ok(
+                authService.verifyLoginOtp(
+                        request.getEmail(),
+                        request.getOtp()
+                )
+        );
+    }
+
+
 
 
 
