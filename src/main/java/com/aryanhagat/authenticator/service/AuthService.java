@@ -2,7 +2,6 @@ package com.aryanhagat.authenticator.service;
 
 import com.aryanhagat.authenticator.dto.LoginResponse;
 import com.aryanhagat.authenticator.exception.DuplicateEmailException;
-import com.aryanhagat.authenticator.exception.InvalidSignupException;
 import com.aryanhagat.authenticator.exception.InvalidCredentialsException;
 import com.aryanhagat.authenticator.exception.UserNotFoundException;
 import com.aryanhagat.authenticator.dto.LoginRequest;
@@ -32,14 +31,6 @@ public class AuthService {
 
     public void signup(SignupRequest request) {
 
-        if (request.getEmail() == null || request.getEmail().isBlank()) {
-            throw new InvalidSignupException("Email is required");
-        }
-
-        if (request.getPassword() == null || request.getPassword().length() < 6) {
-            throw new InvalidSignupException("Password must be at least 6 characters");
-        }
-
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new DuplicateEmailException("Email already registered");
         }
@@ -63,24 +54,22 @@ public class AuthService {
         }
 
         if (user.isTwoFactorEnabled()) {
-            // Don't issue token yet — 2FA still pending
             return new LoginResponse(false, true, "OTP verification required");
         }
 
-        // 2FA not enabled — issue token immediately
         String token = jwtService.generateToken(user.getEmail());
         return new LoginResponse(true, false, "Login successful", token);
     }
 
-    public LoginResponse verifyLoginOtp(String email, int otp) {
+    public LoginResponse verifyLoginOtp(String email, Integer otp) {
+        // Note: otp is now Integer to match the updated DTO
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!user.isTwoFactorEnabled()) {
-            // Shouldn't normally hit this, but handle gracefully
             String token = jwtService.generateToken(user.getEmail());
-            return new LoginResponse(true, false, "Login successful", token); // NEW
+            return new LoginResponse(true, false, "Login successful", token);
         }
 
         boolean valid = twoFactorService.verifyOtp(
@@ -92,7 +81,6 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid OTP");
         }
 
-        // OTP verified — NOW we issue the token
         String token = jwtService.generateToken(user.getEmail());
         return new LoginResponse(true, false, "Login successful", token);
     }

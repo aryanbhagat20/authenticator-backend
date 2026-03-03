@@ -1,9 +1,13 @@
 package com.aryanhagat.authenticator.dto;
 
+import jakarta.validation.constraints.NotNull;
+
 public class OtpVerifyRequest {
 
     private String email;
-    private int otp;
+
+    @NotNull(message = "OTP is required")
+    private Integer otp;
 
     public String getEmail() {
         return email;
@@ -13,11 +17,11 @@ public class OtpVerifyRequest {
         this.email = email;
     }
 
-    public int getOtp() {
+    public Integer getOtp() {
         return otp;
     }
 
-    public void setOtp(int otp) {
+    public void setOtp(Integer otp) {
         this.otp = otp;
     }
 }

@@ -1,9 +1,17 @@
 package com.aryanhagat.authenticator.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class LoginOtpRequest {
 
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be a valid email address")
     private String email;
-    private int otp;
+
+    @NotNull(message = "OTP is required")
+    private Integer otp;
 
     public String getEmail() {
         return email;
@@ -13,11 +21,11 @@ public class LoginOtpRequest {
         this.email = email;
     }
 
-    public int getOtp() {
+    public Integer getOtp() {
         return otp;
     }
 
-    public void setOtp(int otp) {
+    public void setOtp(Integer otp) {
         this.otp = otp;
     }
 }

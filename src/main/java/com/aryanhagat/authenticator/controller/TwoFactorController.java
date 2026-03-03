@@ -1,41 +1,31 @@
 package com.aryanhagat.authenticator.controller;
 
-import com.aryanhagat.authenticator.entity.User;
-import com.aryanhagat.authenticator.repository.UserRepository;
+import com.aryanhagat.authenticator.dto.OtpVerifyRequest;
 import com.aryanhagat.authenticator.service.TwoFactorService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import com.aryanhagat.authenticator.dto.OtpVerifyRequest;
-
-
 
 @RestController
 @RequestMapping("/2fa")
 public class TwoFactorController {
 
-    private final UserRepository userRepository;
     private final TwoFactorService twoFactorService;
 
-    public TwoFactorController(UserRepository userRepository,
-                               TwoFactorService twoFactorService) {
-        this.userRepository = userRepository;
+    public TwoFactorController(TwoFactorService twoFactorService) {
         this.twoFactorService = twoFactorService;
     }
 
     @GetMapping("/qr")
-    public ResponseEntity<byte[]> getQrCode(@RequestParam String email) {
+    public ResponseEntity<byte[]> getQrCode(Authentication authentication) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // authentication.getName() returns the email we stored in the JWT subject
+        String email = authentication.getName();
 
-        String otpAuthUri = twoFactorService.buildOtpAuthUri(
-                user.getEmail(),
-                user.getTwoFactorSecret()
-        );
-
-        byte[] qrImage = twoFactorService.generateQrCode(otpAuthUri);
+        byte[] qrImage = twoFactorService.getQrCodeForUser(email);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.IMAGE_PNG_VALUE)
@@ -43,27 +33,15 @@ public class TwoFactorController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<String> verifyOtp(@RequestBody OtpVerifyRequest request) {
+    public ResponseEntity<String> verifyOtp(
+            @Valid @RequestBody OtpVerifyRequest request,
+            Authentication authentication) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // The email comes from the JWT token — the client cannot lie about who they are
+        String email = authentication.getName();
 
-        boolean isValid = twoFactorService.verifyOtp(
-                user.getTwoFactorSecret(),
-                request.getOtp()
-        );
-
-        if (!isValid) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("Invalid OTP");
-        }
-
-        user.setTwoFactorEnabled(true);
-        userRepository.save(user);
+        twoFactorService.enableTwoFactor(email, request.getOtp());
 
         return ResponseEntity.ok("2FA enabled successfully");
     }
-
-
 }
