@@ -22,6 +22,7 @@ import java.time.Instant;
 
 @Service
 public class TwoFactorService {
+
     private static final SecureRandom secureRandom = new SecureRandom();
 
     private final UserRepository userRepository;
@@ -30,11 +31,8 @@ public class TwoFactorService {
         this.userRepository = userRepository;
     }
 
-
-    // BUSINESS METHOD: Get QR code for the current user
-    // Called by controller with email from JWT token
+    // Get QR code for current user
     public byte[] getQrCodeForUser(String email) {
-
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -46,9 +44,9 @@ public class TwoFactorService {
         return generateQrCode(otpAuthUri);
     }
 
-    // BUSINESS METHOD: Enable 2FA for the current user
-    // Called by controller with email from JWT token
-    public void enableTwoFactor(String email, Integer otp) {
+
+    // Enable 2FA for current user
+    public void enableTwoFactor(String email, String otp) {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -63,8 +61,7 @@ public class TwoFactorService {
         userRepository.save(user);
     }
 
-
-    // UTILITY: Generate a new TOTP secret
+    // Generate a new TOTP secret
     public String generateSecret() {
         byte[] bytes = new byte[20];
         new SecureRandom().nextBytes(bytes);
@@ -72,7 +69,7 @@ public class TwoFactorService {
         return base32.encodeToString(bytes).replace("=", "");
     }
 
-    // UTILITY: Build the otpauth:// URI for QR code
+    // Build the otpauth URI for QR code generation
     public String buildOtpAuthUri(String email, String secret) {
         String issuer = "AuthenticatorApp";
         return String.format(
@@ -84,8 +81,7 @@ public class TwoFactorService {
         );
     }
 
-
-    // UTILITY: Generate QR code as PNG bytes
+    // Generate QR code as PNG bytes
     public byte[] generateQrCode(String otpAuthUri) {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
@@ -103,10 +99,11 @@ public class TwoFactorService {
         }
     }
 
-
-    // UTILITY: Verify a TOTP code against a secret
-    public boolean verifyOtp(String base32Secret, Integer otp) {
+    // Verify TOTP code
+    public boolean verifyOtp(String base32Secret, String otp) {
         try {
+            int otpInt = Integer.parseInt(otp);
+
             Base32 base32 = new Base32();
             byte[] decodedKey = base32.decode(base32Secret);
             SecretKey secretKey = new SecretKeySpec(decodedKey, "HmacSHA1");
@@ -119,7 +116,7 @@ public class TwoFactorService {
             for (int i = -1; i <= 1; i++) {
                 Instant time = now.plusSeconds(i * totp.getTimeStep().getSeconds());
                 int generatedOtp = totp.generateOneTimePassword(secretKey, time);
-                if (generatedOtp == otp) {
+                if (generatedOtp == otpInt) {
                     return true;
                 }
             }

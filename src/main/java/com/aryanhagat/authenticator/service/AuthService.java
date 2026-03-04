@@ -61,8 +61,8 @@ public class AuthService {
         return new LoginResponse(true, false, "Login successful", token);
     }
 
-    public LoginResponse verifyLoginOtp(String email, Integer otp) {
-        // Note: otp is now Integer to match the updated DTO
+    public LoginResponse verifyLoginOtp(String email, String otp) {
+        // otp is now String ←
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
