@@ -100,6 +100,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     // Which paths should be rate limited
     private boolean isRateLimitedPath(String path) {
+        if (path.startsWith("/swagger-ui") || path.startsWith("/api-docs")) {
+            return false;
+        }
         return path.startsWith("/auth/") || path.startsWith("/2fa/");
     }
 

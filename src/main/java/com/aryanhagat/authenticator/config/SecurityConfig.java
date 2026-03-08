@@ -21,26 +21,32 @@ public class SecurityConfig {
         this.rateLimitFilter = rateLimitFilter;
     }
 
+    private static final String[] PUBLIC_URLS = {
+            "/auth/signup",
+            "/auth/login",
+            "/auth/login/2fa",
+            "/auth/refresh",
+            "/auth/logout",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/api-docs",
+            "/api-docs/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/webjars/**"
+    };
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/auth/signup",
-                                "/auth/login",
-                                "/auth/login/2fa",
-                                "/auth/refresh",
-                                "/auth/logout"
-                        ).permitAll()
+                        .requestMatchers(PUBLIC_URLS).permitAll()
                         .anyRequest().authenticated()
                 )
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthFilter, RateLimitFilter.class);
 
