@@ -66,30 +66,27 @@ public class RateLimitFilter extends OncePerRequestFilter {
     // Define rate limit rules per endpoint
     private Bucket createBucket(String path) {
         Bandwidth limit;
-
-        if (path.equals("/auth/login") || path.equals("/auth/login/2fa")) {
-            // Strict: 5 requests per minute
+        if (path.equals("/auth/login") ||
+                path.equals("/auth/login/2fa") ||
+                path.equals("/auth/refresh")) {
             limit = Bandwidth.builder()
                     .capacity(5)
                     .refillIntervally(5, Duration.ofMinutes(1))
                     .build();
 
         } else if (path.equals("/auth/signup")) {
-            // Moderate: 3 requests per minute
             limit = Bandwidth.builder()
                     .capacity(3)
                     .refillIntervally(3, Duration.ofMinutes(1))
                     .build();
 
         } else if (path.equals("/2fa/verify")) {
-            // Strict: 5 requests per minute
             limit = Bandwidth.builder()
                     .capacity(5)
                     .refillIntervally(5, Duration.ofMinutes(1))
                     .build();
 
         } else {
-            // Default for any other rate-limited path: 10 per minute
             limit = Bandwidth.builder()
                     .capacity(10)
                     .refillIntervally(10, Duration.ofMinutes(1))
@@ -114,8 +111,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
 
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
-            // The first one is always the real client
+            // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2", first one is always the real client
             return xForwardedFor.split(",")[0].trim();
         }
 

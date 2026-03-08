@@ -1,6 +1,7 @@
 package com.aryanhagat.authenticator.service;
 
 import com.aryanhagat.authenticator.dto.LoginResponse;
+import com.aryanhagat.authenticator.entity.RefreshToken;
 import com.aryanhagat.authenticator.exception.DuplicateEmailException;
 import com.aryanhagat.authenticator.exception.InvalidCredentialsException;
 import com.aryanhagat.authenticator.exception.UserNotFoundException;
@@ -18,15 +19,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TwoFactorService twoFactorService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        TwoFactorService twoFactorService,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.twoFactorService = twoFactorService;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     public void signup(SignupRequest request) {
@@ -54,34 +58,55 @@ public class AuthService {
         }
 
         if (user.isTwoFactorEnabled()) {
+            // 2FA required — don't issue tokens yet
             return new LoginResponse(false, true, "OTP verification required");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
-        return new LoginResponse(true, false, "Login successful", token);
+        // Issue both tokens
+        String accessToken = jwtService.generateToken(user.getEmail());
+        RefreshToken refreshToken =
+                refreshTokenService.createRefreshToken(user.getEmail());
+
+        return new LoginResponse(
+                true,
+                false,
+                "Login successful",
+                accessToken,
+                refreshToken.getToken()
+        );
     }
 
     public LoginResponse verifyLoginOtp(String email, String otp) {
-        // otp is now String ←
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!user.isTwoFactorEnabled()) {
-            String token = jwtService.generateToken(user.getEmail());
-            return new LoginResponse(true, false, "Login successful", token);
+            String accessToken = jwtService.generateToken(user.getEmail());
+            RefreshToken refreshToken =
+                    refreshTokenService.createRefreshToken(user.getEmail());
+            return new LoginResponse(
+                    true, false, "Login successful",
+                    accessToken, refreshToken.getToken()
+            );
         }
 
         boolean valid = twoFactorService.verifyOtp(
-                user.getTwoFactorSecret(),
-                otp
+                user.getTwoFactorSecret(), otp
         );
 
         if (!valid) {
             throw new InvalidCredentialsException("Invalid OTP");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
-        return new LoginResponse(true, false, "Login successful", token);
+        // OTP verified — issue both tokens
+        String accessToken = jwtService.generateToken(user.getEmail());
+        RefreshToken refreshToken =
+                refreshTokenService.createRefreshToken(user.getEmail());
+
+        return new LoginResponse(
+                true, false, "Login successful",
+                accessToken, refreshToken.getToken()
+        );
     }
 }

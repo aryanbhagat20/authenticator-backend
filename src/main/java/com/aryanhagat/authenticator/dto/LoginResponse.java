@@ -6,21 +6,25 @@ public class LoginResponse {
     private boolean otpRequired;
     private String message;
     private String token;
+    private String refreshToken; // NEW
 
-    // Constructor for when we have a token (successful login, 2FA not required)
-    public LoginResponse(boolean success, boolean otpRequired, String message, String token) {
+    // Full constructor — login success with both tokens
+    public LoginResponse(boolean success, boolean otpRequired,
+                         String message, String token, String refreshToken) {
         this.success = success;
         this.otpRequired = otpRequired;
         this.message = message;
         this.token = token;
+        this.refreshToken = refreshToken;
     }
 
-    // Constructor for when we don't have a token yet (2FA required)
+    // No token constructor — used when 2FA is required
     public LoginResponse(boolean success, boolean otpRequired, String message) {
         this.success = success;
         this.otpRequired = otpRequired;
         this.message = message;
         this.token = null;
+        this.refreshToken = null;
     }
 
     public boolean isSuccess() {
@@ -37,5 +41,9 @@ public class LoginResponse {
 
     public String getToken() {
         return token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
     }
 }

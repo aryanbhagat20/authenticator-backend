@@ -1,6 +1,8 @@
 package com.aryanhagat.authenticator.exception;
 
 import com.aryanhagat.authenticator.dto.ValidationErrorResponse;
+import com.aryanhagat.authenticator.exception.InvalidRefreshTokenException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -66,6 +68,13 @@ public class GlobalExceptionHandler {
                 .body("Access denied: you don't have permission to access this resource");
     }
 
+    // Handles invalid refresh token errors
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<String> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    // Catches any other exceptions that we didn't explicitly handle
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

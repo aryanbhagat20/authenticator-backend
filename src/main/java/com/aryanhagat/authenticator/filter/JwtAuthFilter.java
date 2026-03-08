@@ -22,13 +22,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
     }
 
-    // ── NEW: skip this filter entirely for public endpoints ──
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.equals("/auth/signup") ||
-                path.equals("/auth/login")  ||
-                path.equals("/auth/login/2fa");
+        return path.equals("/auth/signup")     ||
+                path.equals("/auth/login")     ||
+                path.equals("/auth/login/2fa") ||
+                path.equals("/auth/refresh")   ||
+                path.equals("/auth/logout");
     }
 
     @Override
